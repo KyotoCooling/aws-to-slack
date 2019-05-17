@@ -71,7 +71,34 @@ class Slack {
 				message.channel = slackChannel;
 			}
 
-			const response = await postJson(message, hookUrl);
+			// MS Teams Mapping
+			let msgBody = ``;
+			const attachment = message.attachments[0];
+			if (attachment.title_link) {
+				msgBody = `<h1><a href="${attachment.title_link}">${attachment.title}</a></h1>`;
+			} else {
+				msgBody = `<h1>${attachment.title}</h1>`;
+			}
+			msgBody+= `<div><h3>${attachment.author_name}</h3></div>`;
+			msgBody+= `<div><p>${attachment.text}</p></div>`;
+			msgBody+= `<div style="height: 10px"></div>`
+			if (attachment.fields) {
+				msgBody+= "<table>";
+				attachment.fields.forEach(field => {
+					msgBody+= `
+						<tr>
+							<th>${field.title}:</th>
+							<td width="10"></td>
+							<td>${field.value}</td>
+						</tr>`
+				})
+				msgBody+= "</table>"
+			}
+			msgBody+= `<div style="height: 10px"></div>`
+			if (attachment.image_url) {
+				msgBody+= `<img src="${attachment.image_url}" />`
+			}
+			const response = await postJson({ text: msgBody }, hookUrl);
 			const statusCode = response.statusCode;
 
 			if (200 <= statusCode && statusCode < 300) {
